@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MISE skeleton</title>
+  <style>
+    body { font: 15px/1.5 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; background: #f7f4ee; color: #1f1b16; }
+    header { padding: 14px 24px; background: #fffdf9; border-bottom: 1px solid #e6e0d6; }
+    header b { color: #b4531f; }
+    main { max-width: 960px; margin: 0 auto; padding: 20px 24px; }
+    form { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+    select, button { font: inherit; padding: 6px 10px; border: 1px solid #d9d2c5; border-radius: 6px; background: #fff; }
+    button { background: #b4531f; color: #fff; border-color: #b4531f; cursor: pointer; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .card { background: #fffdf9; border: 1px solid #e6e0d6; border-radius: 10px; padding: 14px 16px; }
+    .card small { color: #7a736a; display: block; }
+    .card b { font-size: 24px; }
+    table { border-collapse: collapse; width: 100%; background: #fffdf9; border: 1px solid #e6e0d6; border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+    th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #efeae1; }
+    th { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #7a736a; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .bar { height: 10px; background: #2a78d6; border-radius: 3px; }
+    h2 { font-size: 16px; margin: 18px 0 8px; }
+    .muted { color: #7a736a; font-size: 13px; }
+  </style>
+</head>
+<body>
+<header><b>MISE</b> &middot; database + app skeleton (Group 8)</header>
+<main>
+  <form method="get">
+    <label>Bakery
+      <select name="bakery" onchange="this.form.submit()">
+        {% for id, name in bakeries %}<option value="{{ id }}" {% if id == bakery_id %}selected{% endif %}>{{ name }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Product
+      <select name="product">
+        {% for p in products %}<option value="{{ p }}" {% if p == product %}selected{% endif %}>{{ p }}</option>{% endfor %}
+      </select>
+    </label>
+    <button type="submit">Show</button>
+    <span class="muted">user input → Flask → Postgres → page</span>
+  </form>
+
+  <div class="cards">
+    <div class="card"><small>Tickets in the database (COUNT)</small><b>{{ "{:,}".format(tickets) }}</b></div>
+    <div class="card"><small>Covers</small><b>{{ first_day }} → {{ last_day }}</b></div>
+    <div class="card"><small>{{ product }} sells most at (hour of day)</small><b>{% if peak_hour is not none %}{{ "%02d:00"|format(peak_hour) }}{% else %}–{% endif %}</b></div>
+  </div>
+
+  <h2>Top products at {{ bakery_name }} by units sold (SUM)</h2>
+  <table>
+    <tr><th>Product</th><th>Units</th><th>Tickets</th><th></th></tr>
+    {% set maxu = top[0][1] if top else 1 %}
+    {% for name, units, n in top %}
+    <tr><td>{{ name }}</td><td class="num">{{ "{:,.0f}".format(units) }}</td><td class="num">{{ "{:,}".format(n) }}</td>
+        <td style="width:40%"><div class="bar" style="width: {{ (units / maxu * 100)|round(0) }}%"></div></td></tr>
+    {% endfor %}
+  </table>
+
+  <h2>{{ product }}: average units per open day, by weekday (AVG)</h2>
+  <p class="muted">This is the model's baseline: what a bakery would bake if it only looked at the same weekday's history.</p>
+  <table>
+    <tr><th>Weekday</th><th>Avg units / day</th><th>Open days</th></tr>
+    {% for day, avg, days in weekday_rows %}
+    <tr><td>{{ day }}</td><td class="num">{{ avg }}</td><td class="num">{{ days }}</td></tr>
+    {% endfor %}
+  </table>
+
+  <h2>{{ product }}: units by hour of day</h2>
+  <table>
+    <tr><th>Hour</th><th>Units</th><th></th></tr>
+    {% set maxh = by_hour|map(attribute=1)|max if by_hour else 1 %}
+    {% for h, units in by_hour %}
+    <tr><td>{{ "%02d:00"|format(h) }}</td><td class="num">{{ "{:,.0f}".format(units) }}</td>
+        <td style="width:50%"><div class="bar" style="width: {{ (units / maxh * 100)|round(0) }}%"></div></td></tr>
+    {% endfor %}
+  </table>
+</main>
+</body>
+</html>

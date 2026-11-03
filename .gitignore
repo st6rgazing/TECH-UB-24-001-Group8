@@ -1,0 +1,14 @@
+# secrets — never commit
+.env
+.env.*
+!.env.example
+
+# data files live locally (loaded into Railway Postgres by db/load_data.py)
+data/*.csv
+
+# python
+__pycache__/
+*.pyc
+venv/
+.venv/
+.DS_Store
